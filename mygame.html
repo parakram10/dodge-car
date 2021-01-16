@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My game</title>
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+        }
+        .hide{
+            display: none;
+        }
+        .car, .enemy{
+            background-color: teal;
+            height: 70px;
+            width: 50px;
+            position: absolute;
+            bottom: 120px;
+        }
+        .gameArea{
+            height: 100vh;
+            width: 400px;
+            margin: auto;
+            position: relative;
+            background-color: black;
+            border-left: 6px dashed white;
+            border-right: 6px dashed white;
+        }
+        .score{
+            position: absolute;
+            top: 15px;
+            left: 40px;
+            background-color: tomato;
+            width: 300px;
+            line-height: 70px;
+            font-family: monospace;
+            text-align: center;
+            color: mediumblue;
+            font-size:  2rem;
+            font-weight: bolder;
+            box-shadow: 0 5px 5px #777;
+        }
+        .start{
+            position: absolute;
+            background-color: teal;
+            box-shadow: 3px 5px 5px rgb(51, 50, 50);
+            transform: translate(-50%, -50%);
+            width: 30%;
+            top: 50%;
+            left: 50%;
+            z-index: 1;
+            text-align: center;
+            line-height: 30px;
+            letter-spacing: 5;
+            padding: 15px;
+            margin: auto;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 15px;
+            color: honeydew;
+        }
+        .line{
+            width: 10px;
+            height: 100px;
+            background: white;
+            position: absolute;
+            margin-left: 195px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game">
+        <div class="score hide">Score : 21020e203</div>
+        <div class="start"><p>Press here to start <br>Use arrow key to move the car<br> If you hit another car you will lose.</p></div>
+        <div class="gameArea"></div>
+    </div>
+
+    <script>
+        const score = document.querySelector('.score');
+        const gameArea = document.querySelector('.gameArea');
+        const start = document.querySelector('.start');
+
+        let player = {score : 0, speed : 4};
+
+        let keys = { ArrowUp : false, ArrowDown : false, ArrowLeft : false, ArrowRight : false};
+
+        document.addEventListener('keyup', keyUp);
+        document.addEventListener('keydown', keyDown);
+
+        function keyDown(e){
+            e.preventDefault();
+            keys[e.key] = true;
+        }
+
+        function keyUp(e){
+            e.preventDefault();
+            keys[e.key] = false;
+        }
+
+        start.addEventListener('click', startGame);
+         
+        function movelines(){
+
+            let lines = document.querySelectorAll('.line');
+
+            lines.forEach(function(item){
+                if(item.y >= 680){
+                    item.y -= 750;
+                }
+
+                item.y += player.speed;
+                item.style.top = item.y + 'px';
+            })
+        }
+
+        function isCollide(a,b){
+            aRect = a.getBoundingClientRect();
+            bRect = b.getBoundingClientRect();
+            return !((aRect.top > bRect.bottom) || (aRect.bottom < bRect.top) || (aRect.right < bRect.left) || (aRect.left > bRect.right));
+        }
+
+        
+        function endGame(){
+            player.start = false;
+            start.classList.remove('hide');
+            gameArea.innerHTML = "";
+            start.innerHTML = `<p>Game Over <br> Your final score is ${player.score} <br> Press here to play again`;
+        }
+
+
+        function moveenemy(car){
+            let enemy = document.querySelectorAll(".enemy");
+
+            enemy.forEach(function(item){
+
+                if(isCollide(car,item)){
+                    endGame();
+                }
+
+                if(item.y >= 700){
+                    item.y = -300;
+                    item.style.left = Math.floor(Math.random() * 350) + "px";
+                }
+                item.y += player.speed;
+                item.style.top = item.y + "px";
+            })
+
+        }
+
+
+
+        function playGame(){
+
+            let car = document.querySelector('.car');
+
+            let road = gameArea.getBoundingClientRect();
+
+            if(player.start){
+                if(keys.ArrowDown && player.y < (road.bottom - 70)) {player.y += player.speed;}
+                if(keys.ArrowUp && player.y > (road.top + 80)) {player.y -= player.speed;}
+                if(keys.ArrowLeft && player.x > 0) {player.x -= player.speed};
+                if(keys.ArrowRight && player.x < road.width - 60) {player.x += player.speed};
+            }
+
+            movelines();
+            moveenemy(car);
+
+
+            car.style.left = player.x + "px";
+            car.style.top = player.y + "px";
+
+            window.requestAnimationFrame(playGame);
+            player.score++;
+
+            let ps = player.score - 1;
+            score.innerText = `Score ${ps}`;
+
+        }
+
+
+        function startGame(){
+            start.classList.add('hide');
+            gameArea.classList.remove('hide');
+            score.classList.remove('hide');
+
+            player.start = true;
+            player.score = 0;
+
+            window.requestAnimationFrame(playGame);
+
+            for(let i=0;i<5;i++){
+                let line = document.createElement('div');
+                line.setAttribute('class','line');
+                line.y = (i*150)+30;
+                line.style.top = line.y + "px";
+                gameArea.appendChild(line);
+            }
+
+            let car = document.createElement('div');
+            car.setAttribute('class','car');
+            gameArea.appendChild(car);
+
+            player.x = car.offsetLeft;
+            player.y = car.offsetTop;
+            
+            
+            for(let i=0;i<4;i++){
+                console.log('child creates')
+                let enemyCar = document.createElement('div');
+                enemyCar.setAttribute('class','enemy');
+                enemyCar.y = ((i+1)*250) * -1;
+                enemyCar.style.top = enemyCar.y + "px";
+                enemyCar.style.background = 'mediumblue';
+                enemyCar.style.left = Math.floor(Math.random() * 350) + "px";
+                gameArea.appendChild(enemyCar);
+            }
+
+        }
+
+    </script>
+</body>
+</html>
